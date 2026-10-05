@@ -180,9 +180,3 @@ Di `runner.py`, ubah sementara `"16:00"` menjadi satu menit ke depan, jalankan `
 ## ⚠️ Disclaimer
 
 Proyek ini dibuat untuk keperluan belajar dan efisiensi pribadi. Isi `catatan.txt` dengan kegiatan yang benar-benar kamu kerjakan, dan pastikan penggunaannya sesuai aturan program MagangHub dan perusahaan tempatmu magang. Jangan commit file `.env` dan folder `user_data/` ke repository publik.
-
----
-
-## 📄 Lisensi
-
-MIT License (sesuaikan dengan kebutuhanmu).
