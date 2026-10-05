@@ -1,0 +1,3 @@
+Tanggal 5 oktober 2026 magang di PT Prakarsalanggeng Maju Bersama.
+Aktivitas: Buat helper whatsapp notification dan audit log untuk website project management office ERP.
+Kendala: Tidak ada kendala, semua berjalan lancar dan bisa dipahami dengan baik.
