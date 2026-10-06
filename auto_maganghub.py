@@ -1,5 +1,6 @@
 import os
 import asyncio
+import time
 from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -19,15 +20,10 @@ class LaporanHarian(BaseModel):
 
 # Function Generate Laporan & Prompt Engineering
 def generate_laporan(catatan_harian: str) -> LaporanHarian:
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-3.6-flash",
-        api_key=GEMINI_API_KEY,
-        temperature=0.7,
-        max_retries=5,          # Otomatis mencoba ulang hingga 5 kali jika terputus
-        timeout=60,
-    )
+    # Daftar model utama dan cadangan jika server 503 / overload
+    models_to_try = ["gemini-2.5-flash", "gemini-1.5-flash"]
+    max_attempts_per_model = 3
 
-    structured_llm = llm.with_structured_output(LaporanHarian)
     prompt = ChatPromptTemplate.from_messages([
         ("system", (
             "Kamu adalah asisten AI laporan magang. Ubah catatan singkat pengguna "
@@ -38,10 +34,32 @@ def generate_laporan(catatan_harian: str) -> LaporanHarian:
         ("user", "Catatan aktivitas hari ini: {catatan}")
     ])
 
-    chain = prompt | structured_llm
+    for model_name in models_to_try:
+        print(f"[+] Mencoba memproses dengan model: {model_name}")
+        
+        for attempt in range(1, max_attempts_per_model + 1):
+            try:
+                llm = ChatGoogleGenerativeAI(
+                    model=model_name,
+                    api_key=GEMINI_API_KEY,
+                    temperature=0.7,
+                    timeout=60,
+                )
+                structured_llm = llm.with_structured_output(LaporanHarian)
+                chain = prompt | structured_llm
 
-    response = chain.invoke({"catatan": catatan_harian})
-    return response
+                return chain.invoke({"catatan": catatan_harian})
+
+            except Exception as e:
+                print(f"[!] [Percobaan {attempt}/{max_attempts_per_model}] Server sibuk/error: {e}")
+                if attempt < max_attempts_per_model:
+                    wait_time = attempt * 5  # Menunggu 5d, 10d, dst. sebelum coba lagi
+                    print(f"[+] Menunggu {wait_time} detik sebelum mencoba ulang...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"[!] Gagal menggunakan {model_name}, mencoba model cadangan...\n")
+
+    raise RuntimeError("Gagal mendapatkan respon dari server Gemini setelah beberapa kali percobaan.")
 
 # Automation Playwright dengan cookie session
 async def submit_to_maganghub(laporan: LaporanHarian):
